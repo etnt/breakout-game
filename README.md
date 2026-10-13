@@ -4,6 +4,9 @@ A fully playable 2D Breakout game. Pure HTML/CSS/JS — no build step, no
 dependencies, no framework. The game logic is pure JavaScript and is covered
 by automated tests that run in Node.
 
+**Play online:** https://etnt.github.io/breakout-game/ (deployed automatically
+to GitHub Pages on every push to `main` — see [Deploy](#deploy-to-github-pages))
+
 ## Run the game
 
 Open `index.html` directly in a browser (double-click works — the game loads
