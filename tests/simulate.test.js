@@ -19,10 +19,11 @@ function mulberry32(seed) {
   };
 }
 
-// Headless bot: tracks ball.x with the paddle, launches and restarts as needed.
+// Headless bot: tracks ball.x with the paddle using the left/right keys,
+// launches and restarts as needed.
 function runBot(seconds, hz, seed) {
   var game = Breakout.createGame({ rng: mulberry32(seed) });
-  var input = { left: false, right: false, pointerX: null, launch: false, pause: false, restart: false };
+  var input = { left: false, right: false, launch: false, pause: false, restart: false };
   var steps = Math.round(seconds * hz);
   var dt = 1 / hz;
 
@@ -30,18 +31,17 @@ function runBot(seconds, hz, seed) {
     input.launch = false;
     input.pause = false;
     input.restart = false;
-    input.pointerX = null;
+    input.left = false;
+    input.right = false;
 
     if (game.state === 'ready' || game.state === 'levelclear') {
       input.launch = true;
     } else if (game.state === 'playing') {
-      // Track the ball with the paddle (naive proportional bot).
-      var target = game.ball.x;
+      // Track the ball with the paddle (naive bot, keyboard only).
       var paddleCx = game.paddle.x + game.paddle.w / 2;
-      var diff = target - paddleCx;
-      var move = diff * dt * 8; // proportional gain
-      var limit = CONFIG.paddle.speed * dt;
-      input.pointerX = paddleCx + Math.max(-limit, Math.min(limit, move));
+      var diff = game.ball.x - paddleCx;
+      if (diff > 4) input.right = true;
+      else if (diff < -4) input.left = true;
     }
 
     Breakout.update(game, dt, input);

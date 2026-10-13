@@ -92,3 +92,17 @@
 - Rendering/feel can only be verified by a human in a browser; automated tests cover logic only.
 - The qwen3 Rust scaffold was moved to `docs/archive/rust-scaffold/` (build
   artifacts deleted); it is dead code kept for reference only.
+## Modification: keyboard-only paddle + sound effects
+
+- Paddle is now controlled only with ← / → (or A / D); pointer/touch paddle
+  control removed from `js/input.js` and `js/game.js`. Click / tap still
+  launches the ball.
+- Sound effects added (`js/audio.js`, Web Audio API, fully synthesized — no
+  audio files). `js/game.js` emits events into `game.events`
+  (launch, paddle, wall, brick, life, levelclear, gameover, won); `js/main.js`
+  drains them each frame and plays them. Audio unlocks on the first user
+  gesture per browser autoplay policy.
+- Headless bot in `tests/simulate.test.js` now steers with the left/right keys
+  instead of `pointerX`; still clears level 1 in the seeded simulation.
+- Verification: `npm run check` pass; `npm test` 25/25 pass (22 previous +
+  3 new sound-event tests).

@@ -22,8 +22,8 @@ python3 -m http.server 8000
 
 | Action            | Keys / input                          |
 | ----------------- | ------------------------------------- |
-| Move paddle       | ← / → , A / D, or move mouse / finger |
-| Launch ball       | Space, click, or tap                  |
+| Move paddle       | ← / → , A / D (keyboard only)         |
+| Launch ball       | Space, or click / tap the canvas      |
 | Pause / resume    | P or Esc                              |
 | Restart           | Enter or R (also from game-over/win)  |
 
@@ -51,7 +51,8 @@ index.html            game page (canvas 800×600)
 style.css             centering / dark background
 js/config.js          tunable constants
 js/game.js            pure game logic (no DOM, Node-testable)
-js/input.js           keyboard + pointer/touch input
+js/input.js           keyboard input, one-shot flags
+js/audio.js           synthesized sound effects (Web Audio API)
 js/render.js          canvas drawing (HUD, overlays)
 js/main.js            requestAnimationFrame loop, best score, auto-pause
 tests/                node:test suites (zero dependencies)

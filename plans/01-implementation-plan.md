@@ -28,7 +28,8 @@ index.html          canvas + <script> tags
 style.css           centering, dark background
 js/config.js        Breakout.CONFIG constants
 js/game.js          pure logic (no DOM) — createGame, update, restart, togglePause
-js/input.js         keyboard + pointer input, one-shot flags
+js/input.js         keyboard input, one-shot flags
+js/audio.js         synthesized sound effects (Web Audio API)
 js/render.js        draw(ctx, game) — bricks, paddle, ball, HUD, overlays
 js/main.js          rAF loop, dt clamp, localStorage best score, auto-pause
 tests/              node:test suites, zero dependencies
@@ -36,7 +37,11 @@ tests/              node:test suites, zero dependencies
 
 ## Gameplay spec
 
-- Canvas 800×600. Paddle 100×14 at `y = H-40`, keyboard speed 600 px/s, or follows the pointer.
+- Canvas 800×600. Paddle 100×14 at `y = H-40`, keyboard speed 600 px/s (← / → , A / D).
+- Sound effects are synthesized with the Web Audio API (no audio files). The game logic emits
+  sound events (launch, paddle, wall, brick, life, levelclear, gameover, won) into
+  `game.events`; `js/main.js` drains them each frame and `js/audio.js` plays them. Audio starts
+  on the first user gesture (browser autoplay policy).
 - Ball radius 8. Initial speed 320 px/s, +4% per brick hit, capped at 640 px/s.
 - Bricks: 10 columns × 6 rows, 8 px gap, top offset 60. Row points from top:
   70, 60, 50, 40, 30, 20.

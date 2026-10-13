@@ -276,3 +276,37 @@ test('paddle slides under a ball already below the paddle top: it bounces', func
   assert.ok(game.ball.vy < 0, 'ball must bounce (vy negative), not keep falling');
   assert.strictEqual(game.lives, lives, 'no life should be lost');
 });
+// --- Sound events -----------------------------------------------------------
+
+test('sound events: paddle bounce and brick hit are emitted', function () {
+  var game = newPlayingGame();
+  game.ball.y = CONFIG.paddle.y - game.ball.radius; // touching paddle
+  game.ball.vy = CONFIG.ball.initialSpeed;
+  game.ball.vx = 0;
+  game.ball.x = game.paddle.x + CONFIG.paddle.w / 2;
+  Breakout.update(game, TINY_DT, {});
+  var types = game.events.map(function (e) { return e.type; });
+  assert.ok(types.indexOf('paddle') !== -1, 'paddle event expected, got ' + types.join(','));
+
+  // Now hit a brick from below.
+  var brick = game.bricks[0];
+  game.ball.x = brick.x + brick.w / 2;
+  game.ball.y = brick.y + brick.h + game.ball.radius;
+  game.ball.vy = -CONFIG.ball.initialSpeed;
+  game.ball.vx = 0;
+  game.events.length = 0;
+  Breakout.update(game, TINY_DT, {});
+  var brickEvents = game.events.filter(function (e) { return e.type === 'brick'; });
+  assert.strictEqual(brickEvents.length, 1, 'one brick event expected');
+  assert.strictEqual(brickEvents[0].points, brick.points, 'event carries brick points');
+});
+
+test('sound events: wall bounce is emitted and ball stays in bounds', function () {
+  var game = newPlayingGame();
+  game.ball.x = game.ball.radius + 0.5;
+  game.ball.vx = -CONFIG.ball.initialSpeed;
+  game.ball.vy = -CONFIG.ball.initialSpeed;
+  Breakout.update(game, TINY_DT, {});
+  assert.ok(game.events.some(function (e) { return e.type === 'wall'; }),
+    'wall event expected');
+});

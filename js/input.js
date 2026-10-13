@@ -5,17 +5,10 @@
     var input = {
       left: false,
       right: false,
-      pointerX: null,
       launch: false,
       pause: false,
       restart: false
     };
-
-    function toCanvasX(clientX) {
-      var rect = canvas.getBoundingClientRect();
-      var scaleX = canvas.width / rect.width;
-      return (clientX - rect.left) * scaleX;
-    }
 
     window.addEventListener('keydown', function (e) {
       switch (e.key) {
@@ -39,12 +32,8 @@
       }
     });
 
-    // Mouse + touch via pointer events.
-    canvas.addEventListener('pointermove', function (e) {
-      input.pointerX = toCanvasX(e.clientX);
-    });
+    // Click / tap launches the ball (paddle itself is keyboard-only).
     canvas.addEventListener('pointerdown', function (e) {
-      input.pointerX = toCanvasX(e.clientX);
       input.launch = true;
       e.preventDefault();
     });

@@ -21,6 +21,11 @@
 
   var game = Breakout.createGame({ best: loadBest() });
   var input = Breakout.createInput(canvas);
+  var audio = Breakout.createAudio();
+
+  // Browsers only allow audio after a user gesture — resume on the first one.
+  window.addEventListener('keydown', audio.unlock, { once: false });
+  canvas.addEventListener('pointerdown', audio.unlock);
 
   var last = null;
 
@@ -35,6 +40,12 @@
 
     Breakout.update(game, dt, input);
     Breakout.draw(ctx, game);
+
+    // Play queued sound effects, then drain the queue.
+    if (game.events.length) {
+      for (var i = 0; i < game.events.length; i++) audio.play(game.events[i]);
+      game.events.length = 0;
+    }
 
     if (game.score > game.best) {
       game.best = game.score;

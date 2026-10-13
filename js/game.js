@@ -41,6 +41,7 @@
     b.y = p.y - b.radius - 0.5;
 
     clampVy(b);
+    emit(game, 'paddle');
     return b;
   }
 
@@ -113,7 +114,9 @@
       ball: { x: 0, y: 0, vx: 0, vy: 0, speed: 0, radius: CONFIG.ball.radius },
       bricks: [],
       bricksTotal: 0,
-      rng: opts.rng || Math.random
+      rng: opts.rng || Math.random,
+      // Sound events drained by the host each frame (see js/main.js).
+      events: []
     };
     startLevel(game, 1);
     return game;
@@ -136,12 +139,20 @@
     game.ball.vy = 0;
   }
 
+  function emit(game, type, extra) {
+    if (!game.events) return; // tolerate bare mock games in tests
+    var e = { type: type };
+    if (extra) for (var k in extra) e[k] = extra[k];
+    game.events.push(e);
+  }
+
   function launchBall(game) {
     // Slight random angle upward (injectable RNG for deterministic tests).
     var a = (game.rng() * 0.7 - 0.35);
     game.ball.vx = game.ball.speed * Math.sin(a);
     game.ball.vy = -game.ball.speed * Math.cos(a);
     game.state = 'playing';
+    emit(game, 'launch');
   }
 
   function restart(game) {
@@ -200,9 +211,6 @@
     var c = CONFIG;
     var p = game.paddle;
 
-    if (input.pointerX != null) {
-      p.x = input.pointerX - p.w / 2;
-    }
     if (input.left) p.x -= c.paddle.speed * dt;
     if (input.right) p.x += c.paddle.speed * dt;
 
@@ -222,9 +230,9 @@
       b.y += b.vy * sub;
 
       // Walls
-      if (b.x - b.radius < 0) { b.x = b.radius; b.vx = Math.abs(b.vx); clampVy(b); }
-      else if (b.x + b.radius > c.W) { b.x = c.W - b.radius; b.vx = -Math.abs(b.vx); clampVy(b); }
-      if (b.y - b.radius < 0) { b.y = b.radius; b.vy = Math.abs(b.vy); clampVy(b); }
+      if (b.x - b.radius < 0) { b.x = b.radius; b.vx = Math.abs(b.vx); clampVy(b); emit(game, 'wall'); }
+      else if (b.x + b.radius > c.W) { b.x = c.W - b.radius; b.vx = -Math.abs(b.vx); clampVy(b); emit(game, 'wall'); }
+      if (b.y - b.radius < 0) { b.y = b.radius; b.vy = Math.abs(b.vy); clampVy(b); emit(game, 'wall'); }
 
       // Paddle: brick-style resolution on the smaller penetration axis.
       // If the vertical penetration is the smaller one (ball moving down),
@@ -266,6 +274,7 @@
         // same frame.
         brick.alive = false;
         game.score += brick.points;
+        emit(game, 'brick', { points: brick.points });
         if (game.score > game.best) game.best = game.score;
         b.speed = Math.min(c.ball.maxSpeed, b.speed * c.speedUpPerBrick);
         // Renormalize velocity to the (possibly raised) speed.
@@ -280,9 +289,11 @@
         game.lives--;
         if (game.lives <= 0) {
           game.state = 'gameover';
+          emit(game, 'gameover');
         } else {
           game.state = 'ready';
           placeBallOnPaddle(game);
+          emit(game, 'life');
         }
         return;
       }
@@ -291,6 +302,7 @@
     // Level cleared?
     if (!game.bricks.some(function (br) { return br.alive; })) {
       game.state = 'levelclear';
+      emit(game, 'levelclear');
     }
   }
 
