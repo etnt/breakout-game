@@ -44,6 +44,17 @@ npm test        # node --test tests/*.test.js — logic + headless bot simulatio
 npm run check   # node --check js/*.js — syntax check
 ```
 
+## Deploy to GitHub Pages
+
+A GitHub Actions workflow (`.github/workflows/deploy-pages.yml`) deploys the
+game on every push to `main`: it first runs the syntax check and tests, then
+publishes the static site.
+
+One-time setup in the GitHub repo: **Settings → Pages → Build and deployment →
+Source: GitHub Actions**. The game is then served at
+`https://etnt.github.io/breakout-game/`. Deploys can also be triggered
+manually via the workflow's **Run workflow** button.
+
 ## Project layout
 
 ```
