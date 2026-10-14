@@ -211,8 +211,8 @@
     var c = CONFIG;
     var p = game.paddle;
 
-    if (input.left) p.x -= c.paddle.speed * dt;
-    if (input.right) p.x += c.paddle.speed * dt;
+    if (input.left || input.touchLeft) p.x -= c.paddle.speed * dt;
+    if (input.right || input.touchRight) p.x += c.paddle.speed * dt;
 
     p.x = Math.max(0, Math.min(c.W - p.w, p.x));
   }

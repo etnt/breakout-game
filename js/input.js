@@ -7,7 +7,11 @@
       right: false,
       launch: false,
       pause: false,
-      restart: false
+      restart: false,
+      // Set while a finger holds the left/right half of the canvas.
+      touchLeft: false,
+      touchRight: false,
+      touchActive: false
     };
 
     window.addEventListener('keydown', function (e) {
@@ -32,11 +36,39 @@
       }
     });
 
-    // Click / tap launches the ball (paddle itself is keyboard-only).
+    // Touch controls:
+    //   - Hold the left half of the canvas to move left, right half to move right.
+    //   - Tap anywhere to launch the ball (same as click).
+    // Several fingers can be held at once; each is tracked by pointerId.
+    var touches = {}; // pointerId -> 'left' | 'right'
+
+    function recountTouches() {
+      input.touchLeft = false;
+      input.touchRight = false;
+      for (var id in touches) {
+        if (touches[id] === 'left') input.touchLeft = true;
+        else input.touchRight = true;
+      }
+    }
+
     canvas.addEventListener('pointerdown', function (e) {
       input.launch = true;
       e.preventDefault();
+      if (e.pointerType !== 'touch') return;
+      var rect = canvas.getBoundingClientRect();
+      var side = (e.clientX - rect.left) < rect.width / 2 ? 'left' : 'right';
+      touches[e.pointerId] = side;
+      input.touchActive = true; // lets the renderer show on-screen hints
+      recountTouches();
     });
+
+    function releaseTouch(e) {
+      if (e.pointerType !== 'touch') return;
+      delete touches[e.pointerId];
+      recountTouches();
+    }
+    window.addEventListener('pointerup', releaseTouch);
+    window.addEventListener('pointercancel', releaseTouch);
 
     // Clear one-shot flags; called after each frame.
     input.endFrame = function () {

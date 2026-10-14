@@ -21,7 +21,8 @@ python3 -m http.server 8000
 
 | Action            | Keys / input                          |
 | ----------------- | ------------------------------------- |
-| Move paddle       | ← / → , A / D (keyboard only)         |
+| Move paddle       | ← / → , A / D                         |
+| Move paddle (touch) | Hold left / right half of the screen |
 | Launch ball       | Space, or click / tap the canvas      |
 | Pause / resume    | P or Esc                              |
 | Restart           | Enter or R (also from game-over/win)  |

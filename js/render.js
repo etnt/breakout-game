@@ -11,7 +11,7 @@
     won: 'YOU WIN! — press Enter or R to play again'
   };
 
-  function draw(ctx, game) {
+  function draw(ctx, game, input) {
     var c = CONFIG;
 
     // Background
@@ -19,6 +19,7 @@
     ctx.fillRect(0, 0, c.W, c.H);
 
     drawBricks(ctx, game);
+    if (input && input.touchActive) drawTouchZones(ctx, input);
     drawPaddle(ctx, game);
     drawBall(ctx, game);
     drawHud(ctx, game);
@@ -37,6 +38,27 @@
       ctx.fillStyle = 'rgba(255,255,255,0.25)';
       ctx.fillRect(b.x, b.y, b.w, 3);
     }
+  }
+
+  // On-screen hints for touch play: the left/right half of the canvas.
+  // The half being held is highlighted.
+  function drawTouchZones(ctx, input) {
+    var c = CONFIG;
+    var half = c.W / 2;
+    var zoneTop = c.H - 120;
+    var zoneH = 120;
+
+    ctx.fillStyle = input.touchLeft ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)';
+    ctx.fillRect(0, zoneTop, half, zoneH);
+    ctx.fillStyle = input.touchRight ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)';
+    ctx.fillRect(half, zoneTop, half, zoneH);
+
+    ctx.font = 'bold 48px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(236,240,241,0.25)';
+    ctx.fillText('\u25C0', half / 2, zoneTop + zoneH / 2);
+    ctx.fillText('\u25B6', half + half / 2, zoneTop + zoneH / 2);
   }
 
   function drawPaddle(ctx, game) {
@@ -93,10 +115,12 @@
 
     ctx.font = '14px monospace';
     ctx.fillStyle = '#7f8c8d';
-    ctx.fillText('Move: ←/→, A/D, mouse, or touch · Launch: Space/click · Pause: P/Esc',
+    ctx.fillText('Move: ←/→ or A/D · Launch: Space/click · Pause: P/Esc',
       c.W / 2, c.H / 2 + 50);
-    ctx.fillText('Restart: Enter or R · Score ' + game.score + ' · Lives ' + game.lives,
+    ctx.fillText('Touch: hold left/right half of screen to move · tap to launch',
       c.W / 2, c.H / 2 + 74);
+    ctx.fillText('Restart: Enter or R · Score ' + game.score + ' · Lives ' + game.lives,
+      c.W / 2, c.H / 2 + 98);
   }
 
   var Breakout = global.Breakout || {};

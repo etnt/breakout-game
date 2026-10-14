@@ -39,7 +39,7 @@
     if (dt < 0) dt = 0;
 
     Breakout.update(game, dt, input);
-    Breakout.draw(ctx, game);
+    Breakout.draw(ctx, game, input);
 
     // Play queued sound effects, then drain the queue.
     if (game.events.length) {
