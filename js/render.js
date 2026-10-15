@@ -40,25 +40,24 @@
     }
   }
 
-  // On-screen hints for touch play: the left/right half of the canvas.
-  // The half being held is highlighted.
+  // On-screen hints for touch play. Drawn in the middle of each half, away
+  // from the paddle, so the player's fingers do not cover it. The held half
+  // is highlighted with a faint full-height tint.
   function drawTouchZones(ctx, input) {
     var c = CONFIG;
     var half = c.W / 2;
-    var zoneTop = c.H - 120;
-    var zoneH = 120;
 
-    ctx.fillStyle = input.touchLeft ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)';
-    ctx.fillRect(0, zoneTop, half, zoneH);
-    ctx.fillStyle = input.touchRight ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)';
-    ctx.fillRect(half, zoneTop, half, zoneH);
+    ctx.fillStyle = input.touchLeft ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.02)';
+    ctx.fillRect(0, 0, half, c.H);
+    ctx.fillStyle = input.touchRight ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.02)';
+    ctx.fillRect(half, 0, half, c.H);
 
     ctx.font = 'bold 48px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(236,240,241,0.25)';
-    ctx.fillText('\u25C0', half / 2, zoneTop + zoneH / 2);
-    ctx.fillText('\u25B6', half + half / 2, zoneTop + zoneH / 2);
+    ctx.fillStyle = 'rgba(236,240,241,0.18)';
+    ctx.fillText('\u25C0', half / 2, c.H / 2);
+    ctx.fillText('\u25B6', half + half / 2, c.H / 2);
   }
 
   function drawPaddle(ctx, game) {
