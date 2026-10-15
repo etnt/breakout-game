@@ -7,11 +7,11 @@
     ready: 'Click or press Space to launch',
     paused: 'Paused — press P or Esc to resume',
     levelclear: 'Level clear! — Space for the next level',
-    gameover: 'GAME OVER — press Enter or R to restart',
-    won: 'YOU WIN! — press Enter or R to play again'
+    gameover: 'GAME OVER — press Enter, R or tap to restart',
+    won: 'YOU WIN! — press Enter, R or tap to play again'
   };
 
-  function draw(ctx, game, input) {
+  function draw(ctx, game) {
     var c = CONFIG;
 
     // Background
@@ -19,7 +19,6 @@
     ctx.fillRect(0, 0, c.W, c.H);
 
     drawBricks(ctx, game);
-    if (input && input.touchActive) drawTouchZones(ctx, input);
     drawPaddle(ctx, game);
     drawBall(ctx, game);
     drawHud(ctx, game);
@@ -37,27 +36,14 @@
       ctx.fillRect(b.x, b.y, b.w, b.h);
       ctx.fillStyle = 'rgba(255,255,255,0.25)';
       ctx.fillRect(b.x, b.y, b.w, 3);
+      // Brick holding an extra ball: show the ball inside it.
+      if (b.hasBall) {
+        ctx.beginPath();
+        ctx.arc(b.x + b.w / 2, b.y + b.h / 2, 5, 0, Math.PI * 2);
+        ctx.fillStyle = '#f5f6fa';
+        ctx.fill();
+      }
     }
-  }
-
-  // On-screen hints for touch play. Drawn in the middle of each half, away
-  // from the paddle, so the player's fingers do not cover it. The held half
-  // is highlighted with a faint full-height tint.
-  function drawTouchZones(ctx, input) {
-    var c = CONFIG;
-    var half = c.W / 2;
-
-    ctx.fillStyle = input.touchLeft ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.02)';
-    ctx.fillRect(0, 0, half, c.H);
-    ctx.fillStyle = input.touchRight ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.02)';
-    ctx.fillRect(half, 0, half, c.H);
-
-    ctx.font = 'bold 48px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(236,240,241,0.18)';
-    ctx.fillText('\u25C0', half / 2, c.H / 2);
-    ctx.fillText('\u25B6', half + half / 2, c.H / 2);
   }
 
   function drawPaddle(ctx, game) {
@@ -69,11 +55,14 @@
   }
 
   function drawBall(ctx, game) {
-    var b = game.ball;
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+    var balls = [game.ball].concat(game.extraBalls || []);
     ctx.fillStyle = '#f5f6fa';
-    ctx.fill();
+    for (var i = 0; i < balls.length; i++) {
+      var b = balls[i];
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   function drawHud(ctx, game) {
@@ -118,7 +107,7 @@
       c.W / 2, c.H / 2 + 50);
     ctx.fillText('Touch: hold left/right half of screen to move · tap to launch',
       c.W / 2, c.H / 2 + 74);
-    ctx.fillText('Restart: Enter or R · Score ' + game.score + ' · Lives ' + game.lives,
+    ctx.fillText('Restart: Enter, R or tap · Score ' + game.score + ' · Lives ' + game.lives,
       c.W / 2, c.H / 2 + 98);
   }
 

@@ -25,10 +25,10 @@
   }
 
   // Bounce the ball off the paddle. Angle = hit * maxPaddleAngle from vertical.
-  function paddleBounce(game) {
+  function paddleBounce(game, ball) {
     var c = CONFIG;
     var p = game.paddle;
-    var b = game.ball;
+    var b = ball || game.ball;
 
     var hit = (b.x - (p.x + p.w / 2)) / (p.w / 2);
     hit = Math.max(-1, Math.min(1, hit));
@@ -69,8 +69,9 @@
   }
 
   // Build the brick grid for a level. Higher levels add rows.
-  function buildLevel(level) {
+  function buildLevel(level, rng) {
     var bc = CONFIG.bricks;
+    rng = rng || Math.random;
     var bw = (CONFIG.W - 2 * bc.sideOffset - (bc.cols - 1) * bc.gap) / bc.cols;
     var bh = 22;
     var rows = levelRows(level);
@@ -86,7 +87,8 @@
           h: bh,
           points: bc.rowPoints[rowIdx],
           color: bc.rowColors[rowIdx],
-          alive: true
+          alive: true,
+          hasBall: rng() < bc.extraBallChance
         });
       }
     }
@@ -112,6 +114,8 @@
         h: CONFIG.paddle.h
       },
       ball: { x: 0, y: 0, vx: 0, vy: 0, speed: 0, radius: CONFIG.ball.radius },
+      // Extra balls released from bricks. The main ball is game.ball.
+      extraBalls: [],
       bricks: [],
       bricksTotal: 0,
       rng: opts.rng || Math.random,
@@ -124,9 +128,10 @@
 
   function startLevel(game, level) {
     game.level = level;
-    game.bricks = buildLevel(level);
+    game.bricks = buildLevel(level, game.rng);
     game.bricksTotal = game.bricks.length;
     game.ball.speed = levelBallSpeed(level);
+    game.extraBalls = [];
     game.state = 'ready';
     placeBallOnPaddle(game);
   }
@@ -178,6 +183,15 @@
     if (input.restart) { restart(game); return; }
     if (input.pause) { togglePause(game); return; }
 
+    // Time spent on the game-over / win screen. A tap only restarts after a
+    // short delay, so a finger still moving the paddle cannot restart it.
+    if (game.state === 'gameover' || game.state === 'won') {
+      game.endedFor = (game.endedFor || 0) + dt;
+      if (input.tap && game.endedFor >= CONFIG.endScreenTapDelay) { restart(game); return; }
+    } else {
+      game.endedFor = 0;
+    }
+
     switch (game.state) {
       case 'ready':
         movePaddle(game, dt, input);
@@ -187,7 +201,7 @@
 
       case 'playing':
         movePaddle(game, dt, input);
-        stepBall(game, dt);
+        updateBalls(game, dt);
         break;
 
       case 'levelclear':
@@ -217,9 +231,65 @@
     p.x = Math.max(0, Math.min(c.W - p.w, p.x));
   }
 
-  function stepBall(game, dt) {
+  // Step every ball in play. The main ball losing sight of the bottom is only
+  // a life lost when no extra balls remain; otherwise an extra ball takes over.
+  function updateBalls(game, dt) {
+    var all = [game.ball].concat(game.extraBalls);
+    var lost = [];
+    for (var i = 0; i < all.length; i++) {
+      if (stepBall(game, dt, all[i]) === 'lost') lost.push(all[i]);
+    }
+
+    game.extraBalls = game.extraBalls.filter(function (b) {
+      return lost.indexOf(b) === -1;
+    });
+
+    if (lost.indexOf(game.ball) !== -1) {
+      if (game.extraBalls.length) {
+        game.ball = game.extraBalls.shift();
+      } else {
+        loseLife(game);
+        return;
+      }
+    }
+
+    // Level cleared?
+    if (!game.bricks.some(function (br) { return br.alive; })) {
+      game.state = 'levelclear';
+      emit(game, 'levelclear');
+    }
+  }
+
+  function loseLife(game) {
+    game.lives--;
+    if (game.lives <= 0) {
+      game.state = 'gameover';
+      emit(game, 'gameover');
+    } else {
+      game.state = 'ready';
+      placeBallOnPaddle(game);
+      emit(game, 'life');
+    }
+  }
+
+  // A brick that holds a ball releases it when hit. The new ball starts in
+  // the brick's place and falls at the current ball speed, angled slightly.
+  function releaseBall(game, brick, speed) {
+    var a = (game.rng() * 0.7 - 0.35);
+    game.extraBalls.push({
+      x: brick.x + brick.w / 2,
+      y: brick.y + brick.h / 2,
+      vx: speed * Math.sin(a),
+      vy: speed * Math.cos(a),
+      speed: speed,
+      radius: CONFIG.ball.radius
+    });
+    emit(game, 'release');
+  }
+
+  // Returns 'lost' if the ball fell past the bottom edge.
+  function stepBall(game, dt, b) {
     var c = CONFIG;
-    var b = game.ball;
 
     // Sub-step so the ball cannot tunnel through bricks.
     var n = Math.max(1, Math.ceil((b.speed * dt) / (b.radius / 2)));
@@ -245,7 +315,7 @@
       var pcol = circleRectCollision(b.x, b.y, b.radius, p);
       if (pcol.hit) {
         if (b.vy > 0 && pcol.penY <= pcol.penX) {
-          paddleBounce(game);
+          paddleBounce(game, b);
         } else {
           b.x = b.x < pcol.rectCx ? p.x - b.radius - 0.01 : p.x + p.w + b.radius + 0.01;
           b.vx = b.x < pcol.rectCx ? -Math.abs(b.vx) : Math.abs(b.vx);
@@ -281,29 +351,15 @@
         var mag = Math.sqrt(b.vx * b.vx + b.vy * b.vy) || 1;
         b.vx = b.vx / mag * b.speed;
         b.vy = b.vy / mag * b.speed;
+
+        if (brick.hasBall) releaseBall(game, brick, b.speed);
         break;
       }
 
       // Bottom: missed the ball
-      if (b.y - b.radius > c.H) {
-        game.lives--;
-        if (game.lives <= 0) {
-          game.state = 'gameover';
-          emit(game, 'gameover');
-        } else {
-          game.state = 'ready';
-          placeBallOnPaddle(game);
-          emit(game, 'life');
-        }
-        return;
-      }
+      if (b.y - b.radius > c.H) return 'lost';
     }
-
-    // Level cleared?
-    if (!game.bricks.some(function (br) { return br.alive; })) {
-      game.state = 'levelclear';
-      emit(game, 'levelclear');
-    }
+    return null;
   }
 
   // ---------------------------------------------------------------------------
@@ -316,6 +372,7 @@
   Breakout.restart = restart;
   Breakout.togglePause = togglePause;
   Breakout.buildLevel = buildLevel;
+  Breakout.updateBalls = updateBalls;
   Breakout.circleRectCollision = circleRectCollision;
   Breakout.paddleBounce = paddleBounce;
   global.Breakout = Breakout;

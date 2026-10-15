@@ -25,13 +25,14 @@ python3 -m http.server 8000
 | Move paddle (touch) | Hold left / right half of the screen |
 | Launch ball       | Space, or click / tap the canvas      |
 | Pause / resume    | P or Esc                              |
-| Restart           | Enter or R (also from game-over/win)  |
+| Restart           | Enter or R, or tap (after game over / win) |
 
 ## Gameplay
 
 - 3 levels, each harder than the last (more rows, faster ball).
 - Ball speed increases 4% per brick hit, capped at 640 px/s.
 - Paddle-angle reflection: hit the ball with the paddle edge for a steeper angle.
+- About 5% of bricks hold an extra ball (shown as a white dot). Hitting one releases a second ball; the game only costs a life when every ball is lost.
 - 3 lives, per-row brick scoring (70/60/50/40/30/20 from the top).
 - Best score persists in `localStorage`.
 

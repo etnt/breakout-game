@@ -27,7 +27,9 @@
       // Points per row, top to bottom.
       rowPoints: [70, 60, 50, 40, 30, 20],
       // Colors per row, top to bottom.
-      rowColors: ['#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6']
+      rowColors: ['#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6'],
+      // Share of bricks that hold an extra ball, released when the brick is hit.
+      extraBallChance: 0.05
     },
 
     lives: 3,
@@ -35,7 +37,8 @@
     speedUpPerBrick: 1.04, // +4% per brick hit
     minVyFraction: 0.25,   // minimum |vy| as a fraction of speed after bounces
     maxPaddleAngle: Math.PI / 3, // 60 degrees from vertical
-    dtCap: 1 / 30          // seconds per step
+    dtCap: 1 / 30,         // seconds per step
+    endScreenTapDelay: 1   // seconds before a tap restarts after game over / win
   };
 
   var Breakout = global.Breakout || {};

@@ -8,10 +8,10 @@
       launch: false,
       pause: false,
       restart: false,
+      tap: false, // pointer went down on the canvas this frame
       // Set while a finger holds the left/right half of the canvas.
       touchLeft: false,
-      touchRight: false,
-      touchActive: false
+      touchRight: false
     };
 
     window.addEventListener('keydown', function (e) {
@@ -53,12 +53,12 @@
 
     canvas.addEventListener('pointerdown', function (e) {
       input.launch = true;
+      input.tap = true;
       e.preventDefault();
       if (e.pointerType !== 'touch') return;
       var rect = canvas.getBoundingClientRect();
       var side = (e.clientX - rect.left) < rect.width / 2 ? 'left' : 'right';
       touches[e.pointerId] = side;
-      input.touchActive = true; // lets the renderer show on-screen hints
       recountTouches();
     });
 
@@ -75,6 +75,7 @@
       input.launch = false;
       input.pause = false;
       input.restart = false;
+      input.tap = false;
     };
 
     return input;

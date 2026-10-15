@@ -62,6 +62,9 @@
       launch: function () {
         sweep({ type: 'square', freq: 240, freqEnd: 620, dur: 0.12, vol: 0.10 });
       },
+      release: function () {
+        sweep({ type: 'triangle', freq: 700, freqEnd: 1100, dur: 0.1, vol: 0.12 });
+      },
       life: function () {
         sweep({ type: 'sawtooth', freq: 420, freqEnd: 90, dur: 0.4, vol: 0.16 });
       },

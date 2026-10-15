@@ -310,3 +310,121 @@ test('sound events: wall bounce is emitted and ball stays in bounds', function (
   assert.ok(game.events.some(function (e) { return e.type === 'wall'; }),
     'wall event expected');
 });
+
+// ---------------------------------------------------------------------------
+// Extra balls released from bricks
+// ---------------------------------------------------------------------------
+
+test('about 5% of bricks hold an extra ball', function () {
+  var total = 0, holders = 0;
+  var seed = 12345;
+  var rng = function () { // simple LCG, deterministic
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+  for (var i = 0; i < 200; i++) {
+    Breakout.buildLevel(1, rng).forEach(function (b) {
+      total++;
+      if (b.hasBall) holders++;
+    });
+  }
+  var share = holders / total;
+  assert.ok(share > 0.03 && share < 0.07, 'share was ' + share);
+});
+
+test('hitting a brick that holds a ball releases an extra ball', function () {
+  var game = newPlayingGame();
+  game.bricks.forEach(function (b) { b.alive = false; });
+  var brick = game.bricks[0];
+  brick.alive = true;
+  brick.hasBall = true;
+  game.ball.x = brick.x + brick.w / 2;
+  game.ball.y = brick.y + brick.h + game.ball.radius - 1;
+  game.ball.vx = 0;
+  game.ball.vy = -200;
+
+  Breakout.update(game, 1 / 60, {});
+
+  assert.strictEqual(brick.alive, false);
+  assert.strictEqual(game.extraBalls.length, 1);
+  assert.ok(game.extraBalls[0].vy > 0, 'released ball falls');
+  assert.ok(game.events.some(function (e) { return e.type === 'release'; }));
+});
+
+test('an extra ball falling out does not cost a life', function () {
+  var game = newPlayingGame();
+  game.extraBalls.push({ x: 100, y: CONFIG.H + 50, vx: 0, vy: 100, speed: 100, radius: 8 });
+  Breakout.update(game, 1 / 60, {});
+  assert.strictEqual(game.extraBalls.length, 0);
+  assert.strictEqual(game.lives, CONFIG.lives);
+  assert.strictEqual(game.state, 'playing');
+});
+
+test('main ball lost with an extra ball still in play: extra takes over, no life lost', function () {
+  var game = newPlayingGame();
+  game.ball.y = CONFIG.H + 50;
+  game.ball.vy = 100;
+  var extra = { x: 300, y: 300, vx: 0, vy: -100, speed: 100, radius: 8 };
+  game.extraBalls.push(extra);
+  Breakout.update(game, 1 / 60, {});
+  assert.strictEqual(game.lives, CONFIG.lives);
+  assert.strictEqual(game.state, 'playing');
+  assert.strictEqual(game.ball, extra);
+  assert.strictEqual(game.extraBalls.length, 0);
+});
+
+test('losing the last ball costs a life and clears no extras', function () {
+  var game = newPlayingGame();
+  game.ball.y = CONFIG.H + 50;
+  game.ball.vy = 100;
+  Breakout.update(game, 1 / 60, {});
+  assert.strictEqual(game.lives, CONFIG.lives - 1);
+  assert.strictEqual(game.state, 'ready');
+});
+
+test('extra balls are cleared when a new level starts', function () {
+  var game = newPlayingGame();
+  game.extraBalls.push({ x: 1, y: 1, vx: 0, vy: 0, speed: 0, radius: 8 });
+  Breakout.restart(game);
+  assert.strictEqual(game.extraBalls.length, 0);
+});
+
+// ---------------------------------------------------------------------------
+// Restart from the game-over / win screens by tapping
+// ---------------------------------------------------------------------------
+
+test('tap does not restart game over until the end-screen delay has passed', function () {
+  var game = newPlayingGame();
+  game.state = 'gameover';
+  game.lives = 0;
+  Breakout.update(game, 0.1, { tap: true });
+  assert.strictEqual(game.state, 'gameover');
+});
+
+test('tap restarts game over after the end-screen delay', function () {
+  var game = newPlayingGame();
+  game.state = 'gameover';
+  game.lives = 0;
+  game.score = 300;
+  for (var i = 0; i < 30; i++) Breakout.update(game, 1 / 30, {}); // 1 s on the screen
+  Breakout.update(game, 1 / 30, { tap: true });
+  assert.strictEqual(game.state, 'ready');
+  assert.strictEqual(game.score, 0);
+  assert.strictEqual(game.lives, CONFIG.lives);
+});
+
+test('tap restarts after winning too', function () {
+  var game = newPlayingGame();
+  game.state = 'won';
+  for (var i = 0; i < 30; i++) Breakout.update(game, 1 / 30, {});
+  Breakout.update(game, 1 / 30, { tap: true });
+  assert.strictEqual(game.state, 'ready');
+  assert.strictEqual(game.level, 1);
+});
+
+test('a tap during play does not restart the game', function () {
+  var game = newPlayingGame();
+  game.score = 50;
+  Breakout.update(game, 0.1, { tap: true });
+  assert.strictEqual(game.score, 50);
+});
